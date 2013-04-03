@@ -2,10 +2,7 @@
        hypnoray
        a meditator
 
-       how now?
-       what about now?
        now?
-       how about now?
 }}
 
 CON
