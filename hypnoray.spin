@@ -2,7 +2,6 @@
        hypnoray
        a meditator
 
-       now?
 }}
 
 CON
