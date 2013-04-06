@@ -2,6 +2,23 @@
        hypnoray
        a meditator
 
+     ,aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    d'                                                                    8
+  ,P'                                                                     8
+,dbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa        8
+8                                                              d"8        8
+8                                                             d' 8        8
+8        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad'  8        8
+8        8   8                                               8   8        8
+8        8   8                                               8   8        8
+8        8  ,8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa8aaa8        8
+8        8 ,P                                                             8
+8        8,P                                                              8
+8        8baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad'
+8                                                                       d'
+8                                                                      d'
+8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaP'
+                 (ascii art by Normand  Veilleux)
 }}
 
 CON
@@ -27,6 +44,8 @@ CON
   BAR_GRAPH_7   = 7
   BAR_GRAPH_8   = 8
   BAR_GRAPH_9   = 9
+
+  Direction_Magic_Number = 3
   
 VAR
   Long is_reset
@@ -35,8 +54,13 @@ VAR
   Long smoothness[smooth_operator + 1] 'for 0 to smooth_operator indexing
   Long smooth_operator_iterator
   Long logging
-  long pressure
-  long cogStack[20]
+  Long pressure
+  Long cogStack[20]
+  Long Direction_Breathing_in
+  Long Direction_Previous_in
+  Long Direction_Previous_reading
+  Long Direction_Progress_Count
+  Long Direction_Bar_Level
   
 OBJ
   system : "Propeller Board of Education"
@@ -57,10 +81,69 @@ PRI init | i
   dira[status_pin] := 1
   dira[heart_pin] := 0
   outa[heart_pin] := 1
+
+  dira[BAR_GRAPH_9..BAR_GRAPH_0] := OUTPUT
   
   'initialize the smoothing array
   repeat i from 0 to smooth_operator
     smoothness[i] := adc.In(0)
+
+PRI Direction_Update
+  ' Direction_Breathing_in
+  ' Direction_Previous_reading
+  ' Direction_Progress_Count
+  if pressure == Direction_Previous_reading
+    'do nothing? 
+
+  if pressure > Direction_Previous_reading
+    Direction_Breathing_in := TRUE
+    
+  if pressure < Direction_Previous_reading
+    Direction_Breathing_in := FALSE
+
+  if Direction_Breathing_in == Direction_Previous_in
+  
+    if Direction_Increment_Progress_t 'if Direction_Magic_Number threshold is met 
+      if Direction_Breathing_in 'are we breathing in or breathing out?
+        breathing_in
+      else
+        breathing_out
+        
+  else
+    Direction_Decrement_Progress
+    
+  Direction_Previous_reading := pressure
+  Direction_Previous_in := Direction_Breathing_in
+
+PRI Direction_Decrement_Progress
+  Direction_Progress_Count := Direction_Progress_Count - 1
+  if Direction_Progress_Count < 0
+    Direction_Progress_Count := 0
+
+PRI Direction_Increment_Progress_t
+  Direction_Progress_Count := Direction_Progress_Count + 1
+  if Direction_Progress_Count > Direction_Magic_Number
+    Direction_Progress_Count := Direction_Magic_Number
+    return TRUE
+  else
+    return FALSE
+        
+PRI breathing_in
+  Direction_Bar_Level := Direction_Bar_Level + 1
+  if Direction_Bar_Level > 10
+    Direction_Bar_Level := 10
+  Set_the_bar
+
+PRI breathing_out
+  Direction_Bar_Level := Direction_Bar_Level - 1
+  if Direction_Bar_Level < 1
+    Direction_Bar_Level := 1
+  Set_the_bar
+  
+PRI Set_the_bar
+
+  'set LED bar to equal Direction_Bar_Level
+   outa[BAR_GRAPH_9..BAR_GRAPH_0] := 1<<Direction_Bar_Level-1   
   
 PRI cosmic_orchestral_beat
   {
@@ -102,7 +185,7 @@ PUB go | current_count
   'cosmic_orchestral_beat
   
   'Launch additional cog
-  cognew(RunBarGraph, @cogStack)
+  'cognew(RunBarGraph, @cogStack)
   
   repeat log_count from 0 to 2 '0-10 range limit due to FileName function
 
@@ -115,7 +198,7 @@ PUB go | current_count
           
       time.Pause(100)
       pressure := AdjustTheScale(GetBreathPressure)
-
+      Direction_Update
     '*********************     
     
       if log_status
@@ -135,6 +218,7 @@ PUB go | current_count
     pressure := AdjustTheScale(GetBreathPressure) 
     pst.Dec(pressure)
     pst.NewLine
+    Direction_Update
     
 PRI AdjustTheScale(thePressure)
   thePressure := thePressure / 2
@@ -211,8 +295,7 @@ PRI status_off
 
 PUB RunBarGraph | modified_pressure
 
-  dira[BAR_GRAPH_9..BAR_GRAPH_0] := OUTPUT              'set range of pins to output
-                                                        '(this works in this case because the pins are consecutive)
+  'show the modified pressure
   repeat
     if pressure < 0
       modified_pressure := 0
@@ -225,20 +308,20 @@ PUB RunBarGraph | modified_pressure
 DAT
 
 {{
-????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-?                                                   TERMS OF USE: MIT License                                                  ?                                                            
-????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
-?Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation    ? 
-?files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,    ?
-?modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software?
-?is furnished to do so, subject to the following conditions:                                                                   ?
-?                                                                                                                              ?
-?The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.?
-?                                                                                                                              ?
-?THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE          ?
-?WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR         ?
-?COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,   ?
-?ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                         ?
-????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
+==================================================================================================================================
+=                                                   TERMS OF USE: MIT License                                                    =                                                            
+==================================================================================================================================
+= Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation     = 
+= files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,     =
+= modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software =
+= is furnished to do so, subject to the following conditions:                                                                    =
+=                                                                                                                                =
+= The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software. =
+=                                                                                                                                =
+= THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE           =
+= WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR          =
+= COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,    =
+= ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                          =
+==================================================================================================================================
 }} 
       
