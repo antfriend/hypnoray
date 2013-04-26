@@ -1,24 +1,24 @@
 {{
-       hypnoray
-       a meditator
+         "hypnoray"
+        a meditator
 
-     ,aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-    d'                                                                    8
-  ,P'                                                                     8
-,dbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa        8
-8                                                              d"8        8
-8                                                             d' 8        8
-8        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad'  8        8
-8        8   8                                               8   8        8
-8        8   8                                               8   8        8
-8        8  ,8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa8aaa8        8
-8        8 ,P                                                             8
-8        8,P                                                              8
-8        8baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad'
-8                                                                       d'
-8                                                                      d'
-8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaP'
-                 (ascii art by Normand  Veilleux)
+       ,aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      d'                                                                    8
+    ,P'                                                                     8
+  ,dbaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa        8
+  8                                                              d"8        8
+  8                                                             d' 8        8
+  8        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad'  8        8
+  8        8   8                                               8   8        8
+  8        8   8                                               8   8        8
+  8        8  ,8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa8aaa8        8
+  8        8 ,P                                                             8
+  8        8,P                                                              8
+  8        8baaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaad'
+  8                                                                       d'
+  8                                                                      d'
+  8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaP'
+                       (ascii art by Normand Veilleux)
 }}
 
 CON
@@ -26,7 +26,7 @@ CON
   _clkmode = xtal1 + pll16x
 
   led_pin = 10
-  status_pin = 2
+  status_pin = 11
   heart_pin = 3
   smooth_operator = 3 'the max index
 
@@ -47,6 +47,26 @@ CON
 
   Direction_Magic_Number = 3
   
+'Verbalizers ***********************************************
+'*** Key States ***
+     'greater than 3 is the count within the debounce range 
+        'DEBOUNCE= 100_000
+        TRIGGER = 3
+        SUSTAIN = 2
+        RELEASE = 1
+        SILENCE = 0
+'*** mode *****************************************************
+        DO_NOTHING = 0
+        PLAY_PHONEMES = 1 
+        RECORD_PHONEMES = 2
+        PLAY_ALLOPHONES = 3
+        RECORD_ALLOPHONES = 4
+        PLAY_WORDS = 5
+        RECORD_WORDS = 6
+        MODE_S1 = 27
+        MODE_S2 = 28
+
+                  
 VAR
   Long is_reset
   Long log_count
@@ -62,6 +82,15 @@ VAR
   Long Direction_Progress_Count
   Long Direction_Bar_Level
   
+  'Verbalizers *********************************************** 
+  LONG Key_State[40]'each of 37 keys' Key States(TRIGGER, SUSTAIN, RELEASE, or SILENCE), but for iterating cols x rows I use 40
+  BYTE The_Mode
+  LONG ADC_Stack[20]'stack space allotment
+  LONG Settings_Stack[20]'stack space allotment   
+  BYTE Pot[19]
+  BYTE serial_progress
+  LONG serial_started
+        
 OBJ
   system : "Propeller Board of Education"
   sd     : "PropBOE MicroSD"
@@ -69,10 +98,16 @@ OBJ
   time   : "Timing"
   adc    : "PropBOE ADC"
   
-PRI init | i
-  system.Clock(80_000_000)
+  Verbalizations   :   "VerbalizeIt"
+          
+PRI init | i, the_key
+  '###########################################
+  '### set to TRUE to write to the SD card ###
+  logging := FALSE
+  '###########################################
   
-  logging := FALSE 
+  'system variables, don't touch
+  system.Clock(80_000_000)
   log_status := FALSE
   log_count := 0
   is_reset := TRUE
@@ -88,12 +123,18 @@ PRI init | i
   repeat i from 0 to smooth_operator
     smoothness[i] := adc.In(0)
 
+  'settings.start       
+  Verbalizations.start(@Pot)
+  repeat the_key from 0 to 38
+    Key_State[the_key] := SILENCE
+     
+  cosmic_orchestral_beat
+
 PRI Direction_Update
-  ' Direction_Breathing_in
   ' Direction_Previous_reading
-  ' Direction_Progress_Count
+
   if pressure == Direction_Previous_reading
-    'do nothing? 
+    return
 
   if pressure > Direction_Previous_reading
     Direction_Breathing_in := TRUE
@@ -101,12 +142,16 @@ PRI Direction_Update
   if pressure < Direction_Previous_reading
     Direction_Breathing_in := FALSE
 
+  'check if we are continuing in the same direction as last time
   if Direction_Breathing_in == Direction_Previous_in
   
     if Direction_Increment_Progress_t 'if Direction_Magic_Number threshold is met 
       if Direction_Breathing_in 'are we breathing in or breathing out?
+      
         breathing_in
+        
       else
+      
         breathing_out
         
   else
@@ -115,87 +160,135 @@ PRI Direction_Update
   Direction_Previous_reading := pressure
   Direction_Previous_in := Direction_Breathing_in
 
+PRI Update_this_Keys_State(the_key, is_pressed) | the_count_now
+
+  if (is_pressed == TRUE)
+    if (Key_State[the_key] <> SUSTAIN)
+       Key_State[the_key] := TRIGGER
+  else
+    if (Key_State[the_key] == SUSTAIN)
+       Key_State[the_key] := RELEASE
+    else
+       Key_State[the_key] := SILENCE 
+
 PRI Direction_Decrement_Progress
+
   Direction_Progress_Count := Direction_Progress_Count - 1
+  
   if Direction_Progress_Count < 0
     Direction_Progress_Count := 0
 
 PRI Direction_Increment_Progress_t
   Direction_Progress_Count := Direction_Progress_Count + 1
+  
   if Direction_Progress_Count > Direction_Magic_Number
     Direction_Progress_Count := Direction_Magic_Number
+    
     return TRUE
   else
     return FALSE
         
 PRI breathing_in
   Direction_Bar_Level := Direction_Bar_Level + 1
+  
   if Direction_Bar_Level > 10
     Direction_Bar_Level := 10
-  Set_the_bar
+  Set_the_bar(Direction_Bar_Level)
+
+  'Update_this_Keys_State(the_key, is_pressed)
+  Update_this_Keys_State(3, FALSE) 
 
 PRI breathing_out
   Direction_Bar_Level := Direction_Bar_Level - 1
+  
   if Direction_Bar_Level < 1
     Direction_Bar_Level := 1
-  Set_the_bar
+  Set_the_bar(Direction_Bar_Level)
+
+  Update_this_Keys_State(3, TRUE)
   
-PRI Set_the_bar
+PRI Set_the_bar(theLevel)
 
   'set LED bar to equal Direction_Bar_Level
-   outa[BAR_GRAPH_9..BAR_GRAPH_0] := 1<<Direction_Bar_Level-1   
+   outa[BAR_GRAPH_9..BAR_GRAPH_0] := 1<<theLevel-1   
   
-PRI cosmic_orchestral_beat
+PRI cosmic_orchestral_beat | timer
   {
   blinkity blink blinker
   }
+
+    timer := 50
+    {
     repeat 4
       status_on
       led_off
-      time.Pause(100)
+      time.Pause(timer)
       status_off
       led_on
-      time.Pause(400)
+      time.Pause(timer*4)
+     }
+    
+    repeat 4
+      status_off
+      led_on
+      Update_this_Keys_State(3, TRUE) 
+      time.Pause(timer)
+      status_on
+      led_off
+      time.Pause(timer*2)
+      status_off
+      led_off
+      Update_this_Keys_State(3, FALSE) 
+      time.Pause(timer*4)
+      
      
     repeat 4
-      status_off
-      led_on
-      time.Pause(50)
       status_on
       led_off
-      time.Pause(200)
-      status_off
-      led_off
-      time.Pause(400)
-
-    repeat 4
+      time.Pause(timer)
       status_off
       led_on
-      time.Pause(50)
-      status_on
-      led_off
-      time.Pause(200)
+      Update_this_Keys_State(3, TRUE) 
+      time.Pause(timer*2)
       status_off
       led_off
-      time.Pause(400)
-      
-PUB go | current_count
+      Update_this_Keys_State(3, FALSE) 
+      time.Pause(timer*4)
+     
+    led_off
+    status_off
+     
+PUB go | current_count, logging_toggler
 
   init
-  'cosmic_orchestral_beat
+  logging_toggler := FALSE
   
-  'Launch additional cog
-  'cognew(RunBarGraph, @cogStack)
+
+
   
-  repeat log_count from 0 to 2 '0-10 range limit due to FileName function
+  'repeat log_count from 0 to 0 '0-10 range limit due to FileName function
 
     'if toggle
     
-    OpenFile(log_count)
+    'OpenFile(log_count)
     '******************** 
-    time.Pause(10)
-    repeat 100
-          
+    
+    repeat '5000
+    
+      'check if button is pressed
+      if logging_toggler
+        'if logging is false(off) turn it true(on) and visa versa
+        if logging
+          CloseFile
+          logging := FALSE
+          log_count++
+        else
+          logging := TRUE
+          OpenFile(log_count)
+        'debounce - big time
+        time.Pause(500)
+
+    
       time.Pause(100)
       pressure := AdjustTheScale(GetBreathPressure)
       Direction_Update
@@ -203,15 +296,17 @@ PUB go | current_count
     
       if log_status
  
-        sd.WriteDec(pressure)
+        'sd.WriteDec(pressure) 
+        sd.WriteDec(Direction_Bar_Level)
         sd.WriteByte(13)' Carriage return
         sd.WriteByte(10)' New line
          
       pst.Dec(pressure)
       pst.NewLine
       
-    CloseFile     
-
+    'CloseFile
+     
+  {
   'now just run forever
   repeat
     time.Pause(100)
@@ -219,7 +314,7 @@ PUB go | current_count
     pst.Dec(pressure)
     pst.NewLine
     Direction_Update
-    
+  }  
 PRI AdjustTheScale(thePressure)
   thePressure := thePressure / 2
   thePressure := thePressure - 40
@@ -265,17 +360,17 @@ PRI FileName(x)
   
   'ASCII0_STREngine_1.integerToDecimal(log_count, 2)
   case x
-    0 : return String("hrt00.txt")
-    1 : return String("hrt01.txt")
-    2 : return String("hrt02.txt")
-    3 : return String("hrt03.txt")
-    4 : return String("hrt04.txt")
-    5 : return String("hrt05.txt")
-    6 : return String("hrt06.txt")
-    7 : return String("hrt07.txt")
-    8 : return String("hrt08.txt")
-    9 : return String("hrt09.txt")
-    10 : return String("hrt10.txt") 
+    0 : return String("breath00.txt")
+    1 : return String("breath01.txt")
+    2 : return String("breath02.txt")
+    3 : return String("breath03.txt")
+    4 : return String("breath04.txt")
+    5 : return String("breath05.txt")
+    6 : return String("breath06.txt")
+    7 : return String("breath07.txt")
+    8 : return String("breath08.txt")
+    9 : return String("breath09.txt")
+    10 : return String("breath10.txt") 
   'return String("hrt1", ".txt")
   'x := String(stringo.integerToDecimal(log_count, 2))
   'return String("hrt", x, ".txt")
