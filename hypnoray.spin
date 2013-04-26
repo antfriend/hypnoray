@@ -127,9 +127,75 @@ PRI init | i, the_key
   Verbalizations.start(@Pot)
   repeat the_key from 0 to 38
     Key_State[the_key] := SILENCE
-     
+
+
+
+
+   .>
+  .The_Mode := PLAY_WORDS
+  'The_Mode := PLAY_ALLOPHONES
+  'The_Mode := PLAY_PHONEMES
   cosmic_orchestral_beat
 
+PRI Verbalizer_Loop | the_key
+
+        '******************************************************************
+        
+        case The_Mode
+                                                
+          PLAY_PHONEMES :
+                                 repeat the_key from 1 to 37         
+                                     if (Key_State[the_key] == RELEASE)'caught a release
+                                         if Verbalizations.release_test(the_key)'if this one is stopping, then advance to SILENCE  
+                                             Key_State[the_key] := SILENCE  'advance to silence
+                                                      
+                                 repeat the_key from 1 to 37                      
+                                     if ((Key_State[the_key] == TRIGGER) OR (Key_State[the_key] == SUSTAIN))'caught a trigger
+                                         if Verbalizations.go_test(the_key)
+                                                        Key_State[the_key] := SUSTAIN
+                                                   
+          
+          PLAY_ALLOPHONES : 'PLAY_ALLOPHONES = 3                      
+                                repeat the_key from 1 to 37         
+                                     if (Key_State[the_key] == RELEASE)'caught a release
+                                         if Verbalizations.stop_if_available(the_key)'if this one is stopping, then advance to SILENCE  
+                                             Key_State[the_key] := SILENCE  'advance to silence
+                                 
+                                repeat the_key from 1 to 37
+                                     if (Key_State[the_key] == SUSTAIN)
+                                        Verbalizations.go_sustain(the_key)
+                                        
+                                repeat the_key from 1 to 37       
+                                     if (Key_State[the_key] == TRIGGER)'caught a trigger                 
+                                         if Verbalizations.go_if_available(the_key)'if this one starts a voice, then advance to SUSTAIN
+                                             Key_State[the_key] := SUSTAIN  'advance to sustain
+
+          PLAY_WORDS : 'PLAY_WORDS
+                                repeat the_key from 1 to 37         
+                                     if (Key_State[the_key] == RELEASE)'caught a release
+                                         if Verbalizations.release_word(the_key)'if this one is stopping, then advance to SILENCE  
+                                             Key_State[the_key] := SILENCE  'advance to silence
+                                 
+                                repeat the_key from 1 to 37
+                                     if (Key_State[the_key] == SUSTAIN)
+                                        Verbalizations.sustain_word(the_key)
+                                        
+                                repeat the_key from 1 to 37       
+                                     if (Key_State[the_key] == TRIGGER)'caught a trigger                 
+                                         if Verbalizations.trigger_word(the_key)'if this one starts a voice, then advance to SUSTAIN
+                                             Key_State[the_key] := SUSTAIN  'advance to sustain
+
+                                             
+          RECORD_WORDS : 'RECORD_WORDS = 4
+                                 repeat the_key from 1 to 37                      
+                                     if (Key_State[the_key] == TRIGGER)'caught a trigger
+                                         Verbalizations.go_test(the_key)
+          OTHER :
+             'do nothing
+             Verbalizations.release_test(1)
+                                             
+'*****END MAIN LOOP*************************************************************************************************************         
+   
 PRI Direction_Update
   ' Direction_Previous_reading
 
@@ -217,7 +283,7 @@ PRI cosmic_orchestral_beat | timer
   blinkity blink blinker
   }
 
-    timer := 50
+    timer := 100
     {
     repeat 4
       status_on
@@ -231,14 +297,15 @@ PRI cosmic_orchestral_beat | timer
     repeat 4
       status_off
       led_on
-      Update_this_Keys_State(3, TRUE) 
+      SaySomething
       time.Pause(timer)
       status_on
       led_off
       time.Pause(timer*2)
       status_off
       led_off
-      Update_this_Keys_State(3, FALSE) 
+      Update_this_Keys_State(3, FALSE)
+      Verbalizer_Loop
       time.Pause(timer*4)
       
      
@@ -248,17 +315,37 @@ PRI cosmic_orchestral_beat | timer
       time.Pause(timer)
       status_off
       led_on
-      Update_this_Keys_State(3, TRUE) 
+      SaySomething
       time.Pause(timer*2)
       status_off
       led_off
-      Update_this_Keys_State(3, FALSE) 
+      Update_this_Keys_State(12, FALSE)
+      Verbalizer_Loop 
       time.Pause(timer*4)
      
     led_off
     status_off
+
+PRI SaySomething  | timer
+      timer := 100
+      
+      Update_this_Keys_State(3, TRUE)
+      Verbalizer_Loop
+      time.Pause(timer)
+
+      Update_this_Keys_State(3, TRUE)
+      Verbalizer_Loop
+      time.Pause(timer)
+
+      Update_this_Keys_State(3, FALSE)
+      Verbalizer_Loop
+      time.Pause(timer)
+
+      Update_this_Keys_State(3, FALSE)
+      Verbalizer_Loop
+      time.Pause(timer)
      
-PUB go | current_count, logging_toggler
+PUB Main | current_count, logging_toggler
 
   init
   logging_toggler := FALSE
@@ -303,6 +390,8 @@ PUB go | current_count, logging_toggler
          
       pst.Dec(pressure)
       pst.NewLine
+      
+      Verbalizer_Loop
       
     'CloseFile
      

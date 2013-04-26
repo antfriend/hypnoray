@@ -9,8 +9,8 @@ CON
         voices = 2 'StereoSpatializer misbehaves if this is not 4. Should be able to be 1..4 otherwise.
         buffer_size = 1000 '$1000 spatializer buffer size (16 to 4096 longs) default=$1000
 
-        LEFT_STEREO_PIN = 11 'lpos_pin
-        RIGHT_STEREO_PIN = 10 'rpos_pin
+        LEFT_STEREO_PIN = 27' 11 'lpos_pin
+        RIGHT_STEREO_PIN = 26' 10 'rpos_pin
         THE_KNOBS_POT = 12
         
         me_high = 1
