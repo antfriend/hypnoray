@@ -25,6 +25,10 @@ CON
   _xinfreq = 5_000_000
   _clkmode = xtal1 + pll16x
 
+  'timing
+  ONE_QUARTER_SECOND = 20_000_000
+
+  'pins
   led_pin = 10
   status_pin = 11
   heart_pin = 3
@@ -92,6 +96,11 @@ VAR
   LONG serial_started
   'using it
   LONG Keys_pressed_status
+
+  'timing
+  LONG main_loops_count
+  LONG quarter_second_increments
+  LONG cnt_to_quarter_second
         
 OBJ
   system : "Propeller Board of Education"
@@ -127,19 +136,48 @@ PRI init | i, the_key
 
   Set_Verbalizer_Pots
   The_Mode := PLAY_ALLOPHONES
-
+  'The_Mode := PLAY_WORDS
+  'The_Mode := PLAY_ALLOPHONES'phones
+  'The_Mode := PLAY_PHONEMES
   Keys_pressed_status := FALSE
   repeat the_key from 0 to 38
     Key_State[the_key] := SILENCE
     
    'settings.start       
   Verbalizations.start(@Pot)
-                                 
-  'The_Mode := PLAY_WORDS
-  'The_Mode := PLAY_ALLOPHONES'phones
-  'The_Mode := PLAY_PHONEMES
+  
+  'timing
+  main_loops_count := 0
+  quarter_second_increments := 0
+  cnt_to_quarter_second := cnt
+  test_the_timer
   cosmic_orchestral_beat
 
+PRI Quart_Second_Increment_Updater
+
+  if cnt > ONE_QUARTER_SECOND + cnt_to_quarter_second
+    
+    cnt_to_quarter_second := cnt
+    quarter_second_increments++
+
+PRI test_the_timer
+
+  repeat 4
+    
+    status_on
+    
+    repeat until quarter_second_increments > 3
+     
+      Quart_Second_Increment_Updater
+
+    quarter_second_increments := 0  
+    status_off
+    
+    repeat until quarter_second_increments > 3
+     
+      Quart_Second_Increment_Updater
+    quarter_second_increments := 0
+           
 PRI Set_Verbalizer_Pots
   
   Pot[0] := 16
@@ -263,11 +301,11 @@ PRI Keys_Released
   
 PRI Update_Keys
   if Keys_pressed_status
-    Update_this_Keys_State(13, FALSE)
-    Update_this_Keys_State(25, FALSE)
-  else
     Update_this_Keys_State(13, TRUE)
-    Update_this_Keys_State(25, TRUE)        
+    Update_this_Keys_State(25, TRUE)
+  else
+    Update_this_Keys_State(13, FALSE)
+    Update_this_Keys_State(25, FALSE)        
 
 PRI Update_this_Keys_State(the_key, is_pressed) | the_count_now
 
@@ -305,7 +343,7 @@ PRI breathing_in
   Set_the_bar(Direction_Bar_Level)
 
   'Update_this_Keys_State(the_key, is_pressed)
-  Keys_Pressed
+  Keys_Released
   
 
 PRI breathing_out
@@ -315,13 +353,16 @@ PRI breathing_out
     Direction_Bar_Level := 1
   Set_the_bar(Direction_Bar_Level)
 
-  Keys_Released
+  main_loops_count := 0
+  Keys_Pressed
+  
   
 PRI Set_the_bar(theLevel)
 
   'set LED bar to equal Direction_Bar_Level
    outa[BAR_GRAPH_9..BAR_GRAPH_0] := 1<<theLevel-1   
-  
+
+    
 PRI cosmic_orchestral_beat | timer
   {
   blinkity blink blinker
@@ -396,20 +437,10 @@ PUB Main | current_count, logging_toggler
 
   init
   logging_toggler := FALSE
-  
-
-
-  
-  'repeat log_count from 0 to 0 '0-10 range limit due to FileName function
-
-    'if toggle
     
-    'OpenFile(log_count)
-    '******************** 
+    repeat 'THE MAIN LOOP ################################
     
-    repeat '5000
-    
-      'check if button is pressed
+      'check if logging button is pressed
       if logging_toggler
         'if logging is false(off) turn it true(on) and visa versa
         if logging
@@ -424,6 +455,7 @@ PUB Main | current_count, logging_toggler
 
     
       time.Pause(100)
+      
       pressure := AdjustTheScale(GetBreathPressure)
       Direction_Update
     '*********************     
@@ -437,20 +469,16 @@ PUB Main | current_count, logging_toggler
          
       pst.Dec(pressure)
       pst.NewLine
+
+      main_loops_count++
       
+      if main_loops_count > 20
+        Keys_Released
+          
       Verbalizer_Loop
       
-    'CloseFile
-     
-  {
-  'now just run forever
-  repeat
-    time.Pause(100)
-    pressure := AdjustTheScale(GetBreathPressure) 
-    pst.Dec(pressure)
-    pst.NewLine
-    Direction_Update
-  }  
+      
+ 
 PRI AdjustTheScale(thePressure)
   thePressure := thePressure / 2
   thePressure := thePressure - 40
