@@ -150,8 +150,8 @@ PRI init | i, the_key
   main_loops_count := 0
   quarter_second_increments := 0
   cnt_to_quarter_second := cnt
-  test_the_timer
-  cosmic_orchestral_beat
+  'test_the_timer
+  'cosmic_orchestral_beat
 
 PRI Quart_Second_Increment_Updater
 
@@ -177,23 +177,27 @@ PRI test_the_timer
      
       Quart_Second_Increment_Updater
     quarter_second_increments := 0
+
            
 PRI Set_Verbalizer_Pots
   
   Pot[0] := 16
   Pot[1] := 255
-  Pot[2] := 64
+  Pot[2] := 10'64
+  
   Pot[3] := 47
   Pot[4] := 122
   Pot[5] := 25
   Pot[6] := 88
-  Pot[7] := 12
+  Pot[7] := 10'12
+  
   Pot[8] := 23
   Pot[9] := 57
   Pot[10] := 61
   Pot[11] := 123
-  Pot[12] := 1   'echo
-  Pot[13] := 2
+  Pot[12] := 180'echo
+  Pot[13] := 2'2
+  
   Pot[14] := 136
   Pot[15] := 51
   Pot[16] := 7
@@ -342,6 +346,7 @@ PRI breathing_in
     Direction_Bar_Level := 10
   Set_the_bar(Direction_Bar_Level)
 
+  
   'Update_this_Keys_State(the_key, is_pressed)
   Keys_Released
   
@@ -353,6 +358,9 @@ PRI breathing_out
     Direction_Bar_Level := 1
   Set_the_bar(Direction_Bar_Level)
 
+  Pot[2] := Direction_Bar_Level + 2
+  Pot[7] := Direction_Bar_Level + 2
+   
   main_loops_count := 0
   Keys_Pressed
   
@@ -472,7 +480,7 @@ PUB Main | current_count, logging_toggler
 
       main_loops_count++
       
-      if main_loops_count > 20
+      if main_loops_count > 12
         Keys_Released
           
       Verbalizer_Loop
