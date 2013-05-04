@@ -90,6 +90,8 @@ VAR
   BYTE Pot[19]
   BYTE serial_progress
   LONG serial_started
+  'using it
+  LONG Keys_pressed_status
         
 OBJ
   system : "Propeller Board of Education"
@@ -123,44 +125,48 @@ PRI init | i, the_key
   repeat i from 0 to smooth_operator
     smoothness[i] := adc.In(0)
 
-  'settings.start       
-  Verbalizations.start(@Pot)
+  Set_Verbalizer_Pots
+  The_Mode := PLAY_ALLOPHONES
+
+  Keys_pressed_status := FALSE
   repeat the_key from 0 to 38
     Key_State[the_key] := SILENCE
-
-  Set_Verbalizer_Pots
-
-  The_Mode := PLAY_WORDS
-  'The_Mode := PLAY_ALLOPHONES
+    
+   'settings.start       
+  Verbalizations.start(@Pot)
+                                 
+  'The_Mode := PLAY_WORDS
+  'The_Mode := PLAY_ALLOPHONES'phones
   'The_Mode := PLAY_PHONEMES
   cosmic_orchestral_beat
 
 PRI Set_Verbalizer_Pots
   
-  Pot[0] := 100
-  Pot[1] := 100
-  Pot[2] := 100
-  Pot[3] := 100
-  Pot[4] := 100
-  Pot[5] := 100
-  Pot[6] := 100
-  Pot[7] := 100
-  Pot[8] := 100
-  Pot[9] := 100
-  Pot[10] := 100
-  Pot[11] := 100
-  Pot[12] := 100
-  Pot[13] := 100
-  Pot[14] := 100
-  Pot[15] := 100
-  Pot[16] := 100
-  Pot[17] := 100
-  Pot[18] := 100
+  Pot[0] := 16
+  Pot[1] := 255
+  Pot[2] := 64
+  Pot[3] := 47
+  Pot[4] := 122
+  Pot[5] := 25
+  Pot[6] := 88
+  Pot[7] := 12
+  Pot[8] := 23
+  Pot[9] := 57
+  Pot[10] := 61
+  Pot[11] := 123
+  Pot[12] := 1   'echo
+  Pot[13] := 2
+  Pot[14] := 136
+  Pot[15] := 51
+  Pot[16] := 7
+  Pot[17] := 6
+  Pot[18] := 4
   'Pot[19] := 0
 
 PRI Verbalizer_Loop | the_key
 
         '******************************************************************
+        Update_Keys
         
         case The_Mode
                                                 
@@ -247,6 +253,22 @@ PRI Direction_Update
   Direction_Previous_reading := pressure
   Direction_Previous_in := Direction_Breathing_in
 
+PRI Keys_Pressed
+  Keys_pressed_status := TRUE  
+  'Update_Keys
+  
+PRI Keys_Released
+  Keys_pressed_status := FALSE  
+  'Update_Keys
+  
+PRI Update_Keys
+  if Keys_pressed_status
+    Update_this_Keys_State(13, FALSE)
+    Update_this_Keys_State(25, FALSE)
+  else
+    Update_this_Keys_State(13, TRUE)
+    Update_this_Keys_State(25, TRUE)        
+
 PRI Update_this_Keys_State(the_key, is_pressed) | the_count_now
 
   if (is_pressed == TRUE)
@@ -283,8 +305,8 @@ PRI breathing_in
   Set_the_bar(Direction_Bar_Level)
 
   'Update_this_Keys_State(the_key, is_pressed)
-  Update_this_Keys_State(3, FALSE)
-  Update_this_Keys_State(15, FALSE)
+  Keys_Pressed
+  
 
 PRI breathing_out
   Direction_Bar_Level := Direction_Bar_Level - 1
@@ -293,8 +315,7 @@ PRI breathing_out
     Direction_Bar_Level := 1
   Set_the_bar(Direction_Bar_Level)
 
-  Update_this_Keys_State(3, TRUE)
-  Update_this_Keys_State(15, TRUE)
+  Keys_Released
   
 PRI Set_the_bar(theLevel)
 
@@ -317,20 +338,19 @@ PRI cosmic_orchestral_beat | timer
       time.Pause(timer*4)
      }
     
-    repeat 4
-      status_off
-      led_on
-      SaySomething
-      time.Pause(timer)
-      status_on
-      led_off
-      time.Pause(timer*2)
-      status_off
-      led_off
-      Update_this_Keys_State(3, FALSE)
-      Verbalizer_Loop
-      time.Pause(timer*4)
-      
+  '  repeat 4
+  '    status_off
+  '    led_on
+  '    SaySomething
+  '    time.Pause(timer)
+  '    status_on
+  '    led_off
+  '    time.Pause(timer*2)
+  '    status_off
+  '    led_off
+  '    Keys_Pressed
+  '    Verbalizer_Loop
+  '    time.Pause(timer*4)
      
     repeat 4
       status_on
@@ -338,13 +358,17 @@ PRI cosmic_orchestral_beat | timer
       time.Pause(timer)
       status_off
       led_on
-      SaySomething
+      Keys_Pressed
+      Verbalizer_Loop
+      time.Pause(timer*2)
+      Verbalizer_Loop
       time.Pause(timer*2)
       status_off
       led_off
-      Update_this_Keys_State(12, FALSE)
+      Keys_Released
       Verbalizer_Loop 
       time.Pause(timer*4)
+      Verbalizer_Loop
      
     led_off
     status_off
