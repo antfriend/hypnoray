@@ -6,7 +6,7 @@ CON
      _CLKMODE = XTAL1 + PLL16X
      _XINFREQ = 5_000_000
 
-        voices = 2 'StereoSpatializer misbehaves if this is not 4. Should be able to be 1..4 otherwise.
+        voices = 4 'StereoSpatializer misbehaves if this is not 4. Should be able to be 1..4 otherwise.
         buffer_size = 1000 '$1000 spatializer buffer size (16 to 4096 longs) default=$1000
 
         LEFT_STEREO_PIN = 27' 11 'lpos_pin
