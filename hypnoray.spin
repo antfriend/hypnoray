@@ -137,6 +137,9 @@ PRI init | i, the_key
   'The_Mode := PLAY_PHONEMES
   cosmic_orchestral_beat
 
+PRI Set_Verbalizer_Parameters
+  
+
 PRI Verbalizer_Loop | the_key
 
         '******************************************************************
