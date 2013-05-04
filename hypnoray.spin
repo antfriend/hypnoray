@@ -128,17 +128,35 @@ PRI init | i, the_key
   repeat the_key from 0 to 38
     Key_State[the_key] := SILENCE
 
+  Set_Verbalizer_Pots
 
-
-
-   .>
-  .The_Mode := PLAY_WORDS
+  The_Mode := PLAY_WORDS
   'The_Mode := PLAY_ALLOPHONES
   'The_Mode := PLAY_PHONEMES
   cosmic_orchestral_beat
 
-PRI Set_Verbalizer_Parameters
+PRI Set_Verbalizer_Pots
   
+  Pot[0] := 100
+  Pot[1] := 100
+  Pot[2] := 100
+  Pot[3] := 100
+  Pot[4] := 100
+  Pot[5] := 100
+  Pot[6] := 100
+  Pot[7] := 100
+  Pot[8] := 100
+  Pot[9] := 100
+  Pot[10] := 100
+  Pot[11] := 100
+  Pot[12] := 100
+  Pot[13] := 100
+  Pot[14] := 100
+  Pot[15] := 100
+  Pot[16] := 100
+  Pot[17] := 100
+  Pot[18] := 100
+  'Pot[19] := 0
 
 PRI Verbalizer_Loop | the_key
 
@@ -265,7 +283,8 @@ PRI breathing_in
   Set_the_bar(Direction_Bar_Level)
 
   'Update_this_Keys_State(the_key, is_pressed)
-  Update_this_Keys_State(3, FALSE) 
+  Update_this_Keys_State(3, FALSE)
+  Update_this_Keys_State(15, FALSE)
 
 PRI breathing_out
   Direction_Bar_Level := Direction_Bar_Level - 1
@@ -275,6 +294,7 @@ PRI breathing_out
   Set_the_bar(Direction_Bar_Level)
 
   Update_this_Keys_State(3, TRUE)
+  Update_this_Keys_State(15, TRUE)
   
 PRI Set_the_bar(theLevel)
 
