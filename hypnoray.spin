@@ -26,7 +26,7 @@ CON
   _clkmode = xtal1 + pll16x
 
   'timing
-  ONE_QUARTER_SECOND = 20_000_000
+ ' ONE_QUARTER_SECOND = 20_000_000
 
   'pins
   led_pin = 10
@@ -140,6 +140,7 @@ PRI init | i, the_key
   'The_Mode := PLAY_ALLOPHONES'phones
   'The_Mode := PLAY_PHONEMES
   Keys_pressed_status := FALSE
+
   repeat the_key from 0 to 38
     Key_State[the_key] := SILENCE
     
@@ -153,31 +154,30 @@ PRI init | i, the_key
   'test_the_timer
   'cosmic_orchestral_beat
 
-PRI Quart_Second_Increment_Updater
+'PRI Quart_Second_Increment_Updater
+'
+'  if cnt > ONE_QUARTER_SECOND + cnt_to_quarter_second
+'    
+'    cnt_to_quarter_second := cnt
+'    quarter_second_increments++
 
-  if cnt > ONE_QUARTER_SECOND + cnt_to_quarter_second
-    
-    cnt_to_quarter_second := cnt
-    quarter_second_increments++
+'PRI test_the_timer
 
-PRI test_the_timer
-
-  repeat 4
+'  repeat 4
     
-    status_on
+'    status_on
     
-    repeat until quarter_second_increments > 3
+'    repeat until quarter_second_increments > 3
      
-      Quart_Second_Increment_Updater
+'      Quart_Second_Increment_Updater
 
-    quarter_second_increments := 0  
-    status_off
+'    quarter_second_increments := 0  
+'    status_off
     
-    repeat until quarter_second_increments > 3
+'    repeat until quarter_second_increments > 3
      
-      Quart_Second_Increment_Updater
-    quarter_second_increments := 0
-
+'      Quart_Second_Increment_Updater
+'    quarter_second_increments := 0
            
 PRI Set_Verbalizer_Pots
   
@@ -262,8 +262,7 @@ PRI Verbalizer_Loop | the_key
           OTHER :
              'do nothing
              Verbalizations.release_test(1)
-                                             
-'*****END MAIN LOOP*************************************************************************************************************         
+        
    
 PRI Direction_Update
   ' Direction_Previous_reading
@@ -361,7 +360,7 @@ PRI breathing_out
   Pot[2] := Direction_Bar_Level + 2
   Pot[7] := Direction_Bar_Level + 2
    
-  main_loops_count := 0
+  
   Keys_Pressed
   
   
@@ -440,53 +439,7 @@ PRI SaySomething  | timer
       Update_this_Keys_State(3, FALSE)
       Verbalizer_Loop
       time.Pause(timer)
-     
-PUB Main | current_count, logging_toggler
 
-  init
-  logging_toggler := FALSE
-    
-    repeat 'THE MAIN LOOP ################################
-    
-      'check if logging button is pressed
-      if logging_toggler
-        'if logging is false(off) turn it true(on) and visa versa
-        if logging
-          CloseFile
-          logging := FALSE
-          log_count++
-        else
-          logging := TRUE
-          OpenFile(log_count)
-        'debounce - big time
-        time.Pause(500)
-
-    
-      time.Pause(100)
-      
-      pressure := AdjustTheScale(GetBreathPressure)
-      Direction_Update
-    '*********************     
-    
-      if log_status
- 
-        'sd.WriteDec(pressure) 
-        sd.WriteDec(Direction_Bar_Level)
-        sd.WriteByte(13)' Carriage return
-        sd.WriteByte(10)' New line
-         
-      pst.Dec(pressure)
-      pst.NewLine
-
-      main_loops_count++
-      
-      if main_loops_count > 12
-        Keys_Released
-          
-      Verbalizer_Loop
-      
-      
- 
 PRI AdjustTheScale(thePressure)
   thePressure := thePressure / 2
   thePressure := thePressure - 40
@@ -560,7 +513,7 @@ PRI status_off
   outa[status_pin] := 0
   
 
-PUB RunBarGraph | modified_pressure
+PRI RunBarGraph | modified_pressure
 
   'show the modified pressure
   repeat
@@ -571,7 +524,53 @@ PUB RunBarGraph | modified_pressure
     outa[BAR_GRAPH_9..BAR_GRAPH_0] := 1<<modified_pressure - 1   'Continually set the value of the scaled pressure to the LED bar graph pins.
                                                         'Do a little bitwise manipulation to make the LEDs look nice.
 
+     
+PUB Main | current_count, logging_toggler
 
+  init
+  logging_toggler := FALSE
+    
+    repeat 'THE MAIN LOOP ################################
+    
+      'check if logging button is pressed
+      if logging_toggler
+        'if logging is false(off) turn it true(on) and visa versa
+        if logging
+          CloseFile
+          logging := FALSE
+          log_count++
+        else
+          logging := TRUE
+          OpenFile(log_count)
+        'debounce - big time
+        time.Pause(500)
+
+    
+      time.Pause(100)
+      
+      pressure := AdjustTheScale(GetBreathPressure)
+      Direction_Update
+    '*********************     
+    
+      if log_status
+ 
+        'sd.WriteDec(pressure) 
+        sd.WriteDec(Direction_Bar_Level)
+        sd.WriteByte(13)' Carriage return
+        sd.WriteByte(10)' New line
+         
+      pst.Dec(pressure)
+      pst.NewLine
+
+      main_loops_count++
+      
+      if main_loops_count > 12
+        Keys_Released
+          
+      Verbalizer_Loop
+'*****END MAIN LOOP************************************************************************************************************* 
+      
+ 
 DAT
 
 {{
