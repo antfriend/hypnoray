@@ -105,7 +105,7 @@ VAR
 OBJ
   system : "Propeller Board of Education"
   sd     : "PropBOE MicroSD"
-  pst    : "Parallax Serial Terminal Plus"
+  'pst    : "Parallax Serial Terminal Plus"
   time   : "Timing"
   adc    : "PropBOE ADC"
   
@@ -471,8 +471,8 @@ PRI OpenFile(log_increment)
     sd.FileOpen(FileName(log_increment), "W")
     log_status := TRUE
      
-    pst.Str(FileName(log_count))
-    pst.Str(String(13, 10))
+    'pst.Str(FileName(log_count))
+    'pst.Str(String(13, 10))
   
 PRI CloseFile
   if logging 
@@ -559,8 +559,8 @@ PUB Main | current_count, logging_toggler
         sd.WriteByte(13)' Carriage return
         sd.WriteByte(10)' New line
          
-      pst.Dec(pressure)
-      pst.NewLine
+      'pst.Dec(pressure)
+      'pst.NewLine
 
       main_loops_count++
       
