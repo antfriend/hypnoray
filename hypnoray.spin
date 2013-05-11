@@ -19,6 +19,7 @@
   8                                                                      d'
   8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaP'
                        (ascii art by Normand Veilleux)
+6:17 5/11/2013 
 }}
 
 CON
@@ -26,7 +27,7 @@ CON
   _clkmode = xtal1 + pll16x
 
   'timing
-  ONE_QUARTER_SECOND = 20_000_000
+ ' ONE_QUARTER_SECOND = 20_000_000
 
   'pins
   led_pin = 10
@@ -105,7 +106,7 @@ VAR
 OBJ
   system : "Propeller Board of Education"
   sd     : "PropBOE MicroSD"
-  pst    : "Parallax Serial Terminal Plus"
+  'pst    : "Parallax Serial Terminal Plus"
   time   : "Timing"
   adc    : "PropBOE ADC"
   
@@ -140,6 +141,7 @@ PRI init | i, the_key
   'The_Mode := PLAY_ALLOPHONES'phones
   'The_Mode := PLAY_PHONEMES
   Keys_pressed_status := FALSE
+
   repeat the_key from 0 to 38
     Key_State[the_key] := SILENCE
     
@@ -151,31 +153,32 @@ PRI init | i, the_key
   quarter_second_increments := 0
   cnt_to_quarter_second := cnt
   'test_the_timer
-  'cosmic_orchestral_beat
+  cosmic_orchestral_beat
 
-PRI Quart_Second_Increment_Updater
+'PRI Quart_Second_Increment_Updater
+'
+'  if cnt > ONE_QUARTER_SECOND + cnt_to_quarter_second
+'    
+'    cnt_to_quarter_second := cnt
+'    quarter_second_increments++
 
-  if cnt > ONE_QUARTER_SECOND + cnt_to_quarter_second
+'PRI test_the_timer
+
+'  repeat 4
     
-    cnt_to_quarter_second := cnt
-    quarter_second_increments++
-
-PRI test_the_timer
-
-  repeat 4
+'    status_on
     
-    status_on
-    
-    repeat until quarter_second_increments > 3
+'    repeat until quarter_second_increments > 3
      
-      Quart_Second_Increment_Updater
+'      Quart_Second_Increment_Updater
 
-    quarter_second_increments := 0  
-    status_off
+'    quarter_second_increments := 0  
+'    status_off
     
-    repeat until quarter_second_increments > 3
+'    repeat until quarter_second_increments > 3
      
-      Quart_Second_Increment_Updater
+
+    'Quart_Second_Increment_Updater
     quarter_second_increments := 0
 
            
@@ -183,21 +186,18 @@ PRI Set_Verbalizer_Pots
   
   Pot[0] := 16
   Pot[1] := 255
-  Pot[2] := 10'64
-  
+  Pot[2] := 64
   Pot[3] := 47
   Pot[4] := 122
   Pot[5] := 25
   Pot[6] := 88
-  Pot[7] := 10'12
-  
+  Pot[7] := 12
   Pot[8] := 23
   Pot[9] := 57
   Pot[10] := 61
   Pot[11] := 123
-  Pot[12] := 180'echo
-  Pot[13] := 2'2
-  
+  Pot[12] := 1   'echo
+  Pot[13] := 2
   Pot[14] := 136
   Pot[15] := 51
   Pot[16] := 7
@@ -262,8 +262,7 @@ PRI Verbalizer_Loop | the_key
           OTHER :
              'do nothing
              Verbalizations.release_test(1)
-                                             
-'*****END MAIN LOOP*************************************************************************************************************         
+        
    
 PRI Direction_Update
   ' Direction_Previous_reading
@@ -346,7 +345,6 @@ PRI breathing_in
     Direction_Bar_Level := 10
   Set_the_bar(Direction_Bar_Level)
 
-  
   'Update_this_Keys_State(the_key, is_pressed)
   Keys_Released
   
@@ -358,10 +356,13 @@ PRI breathing_out
     Direction_Bar_Level := 1
   Set_the_bar(Direction_Bar_Level)
 
+
   Pot[2] := Direction_Bar_Level + 2
   Pot[7] := Direction_Bar_Level + 2
    
+
   main_loops_count := 0
+
   Keys_Pressed
   
   
@@ -440,8 +441,7 @@ PRI SaySomething  | timer
       Update_this_Keys_State(3, FALSE)
       Verbalizer_Loop
       time.Pause(timer)
-     
-PUB Main | current_count, logging_toggler
+
 
   init
   logging_toggler := FALSE
@@ -480,7 +480,7 @@ PUB Main | current_count, logging_toggler
 
       main_loops_count++
       
-      if main_loops_count > 12
+      if main_loops_count > 20
         Keys_Released
           
       Verbalizer_Loop
@@ -518,8 +518,8 @@ PRI OpenFile(log_increment)
     sd.FileOpen(FileName(log_increment), "W")
     log_status := TRUE
      
-    pst.Str(FileName(log_count))
-    pst.Str(String(13, 10))
+    'pst.Str(FileName(log_count))
+    'pst.Str(String(13, 10))
   
 PRI CloseFile
   if logging 
@@ -560,7 +560,7 @@ PRI status_off
   outa[status_pin] := 0
   
 
-PUB RunBarGraph | modified_pressure
+PRI RunBarGraph | modified_pressure
 
   'show the modified pressure
   repeat
@@ -571,7 +571,53 @@ PUB RunBarGraph | modified_pressure
     outa[BAR_GRAPH_9..BAR_GRAPH_0] := 1<<modified_pressure - 1   'Continually set the value of the scaled pressure to the LED bar graph pins.
                                                         'Do a little bitwise manipulation to make the LEDs look nice.
 
+     
+PUB Main | current_count, logging_toggler
 
+  init
+  logging_toggler := FALSE
+    
+    repeat 'THE MAIN LOOP ################################
+    
+      'check if logging button is pressed
+      if logging_toggler
+        'if logging is false(off) turn it true(on) and visa versa
+        if logging
+          CloseFile
+          logging := FALSE
+          log_count++
+        else
+          logging := TRUE
+          OpenFile(log_count)
+        'debounce - big time
+        time.Pause(500)
+
+    
+      time.Pause(100)
+      
+      pressure := AdjustTheScale(GetBreathPressure)
+      Direction_Update
+    '*********************     
+    
+      if log_status
+ 
+        'sd.WriteDec(pressure) 
+        sd.WriteDec(Direction_Bar_Level)
+        sd.WriteByte(13)' Carriage return
+        sd.WriteByte(10)' New line
+         
+      'pst.Dec(pressure)
+      'pst.NewLine
+
+      main_loops_count++
+      
+      if main_loops_count > 12
+        Keys_Released
+          
+      Verbalizer_Loop
+'*****END MAIN LOOP************************************************************************************************************* 
+      
+ 
 DAT
 
 {{
