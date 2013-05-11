@@ -152,7 +152,11 @@ PRI init | i, the_key
   main_loops_count := 0
   quarter_second_increments := 0
   cnt_to_quarter_second := cnt
+<<<<<<< HEAD
   'test_the_timer
+=======
+  test_the_timer
+>>>>>>> 7adb0e53a701fc1bce5561889fe9ef0ba5cf5835
   cosmic_orchestral_beat
 
 'PRI Quart_Second_Increment_Updater
@@ -177,10 +181,18 @@ PRI init | i, the_key
     
 '    repeat until quarter_second_increments > 3
      
+<<<<<<< HEAD
 
     'Quart_Second_Increment_Updater
+=======
+<<<<<<< HEAD
+'      Quart_Second_Increment_Updater
+'    quarter_second_increments := 0
+=======
+      Quart_Second_Increment_Updater
+>>>>>>> 7adb0e53a701fc1bce5561889fe9ef0ba5cf5835
     quarter_second_increments := 0
-
+>>>>>>> parent of ed1e3f0... and better
            
 PRI Set_Verbalizer_Pots
   
@@ -356,6 +368,7 @@ PRI breathing_out
     Direction_Bar_Level := 1
   Set_the_bar(Direction_Bar_Level)
 
+<<<<<<< HEAD
 
   Pot[2] := Direction_Bar_Level + 2
   Pot[7] := Direction_Bar_Level + 2
@@ -363,6 +376,16 @@ PRI breathing_out
 
   main_loops_count := 0
 
+=======
+<<<<<<< HEAD
+  Pot[2] := Direction_Bar_Level + 2
+  Pot[7] := Direction_Bar_Level + 2
+   
+  
+=======
+  main_loops_count := 0
+>>>>>>> parent of ed1e3f0... and better
+>>>>>>> 7adb0e53a701fc1bce5561889fe9ef0ba5cf5835
   Keys_Pressed
   
   
@@ -441,8 +464,13 @@ PRI SaySomething  | timer
       Update_this_Keys_State(3, FALSE)
       Verbalizer_Loop
       time.Pause(timer)
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7adb0e53a701fc1bce5561889fe9ef0ba5cf5835
 
+<<<<<<< HEAD
+=======
   init
   logging_toggler := FALSE
     
@@ -487,6 +515,7 @@ PRI SaySomething  | timer
       
       
  
+>>>>>>> parent of ed1e3f0... and better
 PRI AdjustTheScale(thePressure)
   thePressure := thePressure / 2
   thePressure := thePressure - 40
