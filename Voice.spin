@@ -16,8 +16,9 @@ OBJ
         v       : "VocalTract"
 
 PUB start(the_pot_pointer)
-
+         
     v.start(@aa, -1, -1, -1) 'start tract, no pin outputs
+    'v.set_attenuation(0)   'same as default
     
     the_pot_list_address := the_pot_pointer
     set_gp_to_pitch(1)

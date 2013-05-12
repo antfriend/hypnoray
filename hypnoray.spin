@@ -85,6 +85,7 @@ VAR
   Long Direction_Previous_reading
   Long Direction_Progress_Count
   Long Direction_Bar_Level
+  Long Direction_Bar_Level_at_Release
   
   'Verbalizers *********************************************** 
   LONG Key_State[40]'each of 37 keys' Key States(TRIGGER, SUSTAIN, RELEASE, or SILENCE), but for iterating cols x rows I use 40
@@ -191,11 +192,11 @@ PRI Set_Verbalizer_Pots
   Pot[6] := 88
   Pot[7] := 10'12
   
-  Pot[8] := 23
-  Pot[9] := 57
+  Pot[8] := 23      'vibrato pitch
+  Pot[9] := 57      'vibrato rate
   Pot[10] := 61
-  Pot[11] := 123
-  Pot[12] := 180'echo
+  Pot[11] := 254    'release duration
+  Pot[12] := 230'echo     'from 180
   Pot[13] := 2'2
   
   Pot[14] := 136
@@ -307,15 +308,22 @@ PRI Update_Keys
   if Keys_pressed_status
     Update_this_Keys_State(13, TRUE)
     Update_this_Keys_State(25, TRUE)
+    Update_this_Keys_State(1, TRUE)
+    
   else
     Update_this_Keys_State(13, FALSE)
-    Update_this_Keys_State(25, FALSE)        
+    Update_this_Keys_State(25, FALSE)
+    Update_this_Keys_State(1, FALSE)
+            
 
 PRI Update_this_Keys_State(the_key, is_pressed) | the_count_now
 
   if (is_pressed == TRUE)
     if (Key_State[the_key] <> SUSTAIN)
+       set_pots_to_bar(Direction_Bar_Level)'###################################################
+       Direction_Bar_Level_at_Release := Direction_Bar_Level
        Key_State[the_key] := TRIGGER
+       
   else
     if (Key_State[the_key] == SUSTAIN)
        Key_State[the_key] := RELEASE
@@ -345,9 +353,11 @@ PRI breathing_in
   if Direction_Bar_Level > 10
     Direction_Bar_Level := 10
   Set_the_bar(Direction_Bar_Level)
-
-  
+    
   'Update_this_Keys_State(the_key, is_pressed)
+  
+  'set the verbal release duration to match the breath duration
+  
   Keys_Released
   
 
@@ -358,11 +368,21 @@ PRI breathing_out
     Direction_Bar_Level := 1
   Set_the_bar(Direction_Bar_Level)
 
-  Pot[2] := Direction_Bar_Level + 2
-  Pot[7] := Direction_Bar_Level + 2
-   
+  'set_pots_to_bar(Direction_Bar_Level)
+
   main_loops_count := 0
+  
+  'set the pace of vibrato to match the level
+
+  
   Keys_Pressed
+  
+PRI set_pots_to_bar(bar_level)
+  Pot[2] := bar_level * 3
+  Pot[7] := bar_level * 3
+
+  'Pot[8] := bar_level * 17
+  Pot[9] := bar_level * 17
   
   
 PRI Set_the_bar(theLevel)
@@ -480,7 +500,7 @@ PUB Main | current_count, logging_toggler
 
       main_loops_count++
       
-      if main_loops_count > 12
+      if main_loops_count > (10-Direction_Bar_Level_at_Release) * 3 '36'from 12
         Keys_Released
           
       Verbalizer_Loop
