@@ -35,13 +35,9 @@ PUB start(the_pot_pointer) | i, r
     stop_signal := 1
     pot_pointer := the_pot_pointer
     repeat i from 0 to voices -1
-      'each voice is not on a new cog, but each subsequent vocal tract is
-
-      'v[i].level(5,1)  
+      'each voice is not on a new cog, but each subsequent vocal tract is 
       input[i] := v[i].start(pot_pointer) 'starts cogs 4,5,6,7 of 8
-      'set initial attentuation
-      v[i].level(5)
-      
+
     's.start starts a new cog
     s.start(@input, @buffer, buffer_size, LEFT_STEREO_PIN, -1, RIGHT_STEREO_PIN, -1)'starts cog 8 of 8
    

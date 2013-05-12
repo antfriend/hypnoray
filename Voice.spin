@@ -28,9 +28,6 @@ PUB start(the_pot_pointer)
 PUB done
     return v.empty
 
-PUB level(the_attenuation)
-    v.set_attenuation(the_attenuation)
-
 PUB go_test(the_key) | the_pitch_adjust
 
     f1 := byte[the_pot_list_address][3] '* 100 / 1953 '19.53 Hz    1st resonator frequency: 40 -> 781 Hz
