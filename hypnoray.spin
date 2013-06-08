@@ -19,6 +19,7 @@
   8                                                                      d'
   8aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaP'
                        (ascii art by Normand Veilleux)
+                       
 }}
 
 CON
@@ -51,7 +52,7 @@ CON
 
   Direction_Magic_Number = 3
   
-'Verbalizers ***********************************************
+'Verbalizers ******************* ********* *******************
 '*** Key States ***
      'greater than 3 is the count within the debounce range 
         'DEBOUNCE= 100_000
@@ -184,20 +185,20 @@ PRI Set_Verbalizer_Pots
   
   Pot[0] := 16
   Pot[1] := 255
-  Pot[2] := 10'64
+  Pot[2] := 10'64   volume
   
   Pot[3] := 47
   Pot[4] := 122
   Pot[5] := 25
   Pot[6] := 88
-  Pot[7] := 10'12
+  Pot[7] := 12'10    volume
   
-  Pot[8] := 23      'vibrato pitch
-  Pot[9] := 57      'vibrato rate
+  Pot[8] := 8      'vibrato pitch
+  Pot[9] := 110'57      'vibrato rate
   Pot[10] := 61
   Pot[11] := 254    'release duration
   Pot[12] := 230'echo     'from 180
-  Pot[13] := 2'2
+  Pot[13] := 2'2     volume
   
   Pot[14] := 136
   Pot[15] := 51
@@ -305,16 +306,24 @@ PRI Keys_Released
   'Update_Keys
   
 PRI Update_Keys
-  if Keys_pressed_status
-    Update_this_Keys_State(13, TRUE)
-    Update_this_Keys_State(25, TRUE)
-    Update_this_Keys_State(1, TRUE)
+  'Direction_Bar_Level =
+'  if Keys_pressed_status
+'    Update_this_Keys_State(Direction_Bar_Level, TRUE)
+'    Update_this_Keys_State(Direction_Bar_Level+13, TRUE)
+'    Update_this_Keys_State(Direction_Bar_Level+25, TRUE)     
+'  else
+'    Update_this_Keys_State(Direction_Bar_Level+1, FALSE)
+'    Update_this_Keys_State(Direction_Bar_Level+13, FALSE)
+'    Update_this_Keys_State(Direction_Bar_Level+25, FALSE)
     
+  if Keys_pressed_status
+    Update_this_Keys_State(1, TRUE)
+    Update_this_Keys_State(13, TRUE)
+    Update_this_Keys_State(25, TRUE)     
   else
-    Update_this_Keys_State(13, FALSE)
-    Update_this_Keys_State(25, FALSE)
     Update_this_Keys_State(1, FALSE)
-            
+    Update_this_Keys_State(13, FALSE)
+    Update_this_Keys_State(25, FALSE)            
 
 PRI Update_this_Keys_State(the_key, is_pressed) | the_count_now
 
@@ -374,52 +383,24 @@ PRI breathing_out
   
   'set the pace of vibrato to match the level
 
-  
   Keys_Pressed
   
 PRI set_pots_to_bar(bar_level)
-  Pot[2] := bar_level * 3
-  Pot[7] := bar_level * 3
+  Pot[2] := bar_level * 3  'volume
+  Pot[7] := (bar_level-1) * 3  'volume
 
-  'Pot[8] := bar_level * 17
-  Pot[9] := bar_level * 17
-  
-  
+  'Pot[8] := bar_level * 17 'vibrato pitch
+  'Pot[9] := bar_level * 17 'vibrato rate
+
 PRI Set_the_bar(theLevel)
-
   'set LED bar to equal Direction_Bar_Level
    outa[BAR_GRAPH_9..BAR_GRAPH_0] := 1<<theLevel-1   
-
-    
+  
 PRI cosmic_orchestral_beat | timer
   {
   blinkity blink blinker
   }
-
     timer := 100
-    {
-    repeat 4
-      status_on
-      led_off
-      time.Pause(timer)
-      status_off
-      led_on
-      time.Pause(timer*4)
-     }
-    
-  '  repeat 4
-  '    status_off
-  '    led_on
-  '    SaySomething
-  '    time.Pause(timer)
-  '    status_on
-  '    led_off
-  '    time.Pause(timer*2)
-  '    status_off
-  '    led_off
-  '    Keys_Pressed
-  '    Verbalizer_Loop
-  '    time.Pause(timer*4)
      
     repeat 4
       status_on
@@ -443,7 +424,7 @@ PRI cosmic_orchestral_beat | timer
     status_off
 
 PRI SaySomething  | timer
-      timer := 100
+      timer := 200
       
       Update_this_Keys_State(3, TRUE)
       Verbalizer_Loop
@@ -499,9 +480,12 @@ PUB Main | current_count, logging_toggler
       'pst.NewLine
 
       main_loops_count++
+      'set_pots_to_bar(Direction_Bar_Level)
       
-      if main_loops_count > (10-Direction_Bar_Level_at_Release) * 3 '36'from 12
+      if main_loops_count > (10-Direction_Bar_Level_at_Release) * 25 '36'from 12
         Keys_Released
+      'else
+      '  Pot[7] := (Direction_Bar_Level- 1) * 2'10    volume
           
       Verbalizer_Loop
       
