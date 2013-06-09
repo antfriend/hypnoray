@@ -193,8 +193,8 @@ PRI Set_Verbalizer_Pots
   Pot[6] := 88
   Pot[7] := 12'10    volume
   
-  Pot[8] := 8      'vibrato pitch
-  Pot[9] := 110'57      'vibrato rate
+  Pot[8] := 4      'vibrato pitch  1/48 octave (12 notes to an octave) 4=1 note step
+  Pot[9] := 131'57 '110  'vibrato rate    : (5 / 0.0763 Hz) * 2 = 131
   Pot[10] := 61
   Pot[11] := 254    'release duration
   Pot[12] := 230'echo     'from 180
@@ -389,7 +389,7 @@ PRI set_pots_to_bar(bar_level)
   Pot[2] := bar_level * 3  'volume
   Pot[7] := (bar_level-1) * 3  'volume
 
-  'Pot[8] := bar_level * 17 'vibrato pitch
+  'Pot[8] := bar_level / 2 'vibrato pitch
   'Pot[9] := bar_level * 17 'vibrato rate
 
 PRI Set_the_bar(theLevel)
